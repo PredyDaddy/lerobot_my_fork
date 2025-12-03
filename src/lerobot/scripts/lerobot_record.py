@@ -92,6 +92,7 @@ from lerobot.processor.rename_processor import rename_stats
 from lerobot.robots import (  # noqa: F401
     Robot,
     RobotConfig,
+    agilex,
     bi_so100_follower,
     hope_jr,
     koch_follower,
@@ -102,6 +103,7 @@ from lerobot.robots import (  # noqa: F401
 from lerobot.teleoperators import (  # noqa: F401
     Teleoperator,
     TeleoperatorConfig,
+    agilex as agilex_teleop,
     bi_so100_leader,
     homunculus,
     koch_leader,
@@ -286,6 +288,41 @@ def record_loop(
         preprocessor.reset()
         postprocessor.reset()
 
+    dataset_action_names: list[str] | None = None
+    if dataset is not None:
+        action_features = dataset.features.get(ACTION)
+        if action_features is not None:
+            dataset_action_names = action_features.get("names")
+
+    def _extract_action_from_observation(observation: dict[str, Any]) -> dict[str, float] | None:
+        if not dataset_action_names:
+            return None
+
+        extracted: dict[str, float] = {}
+        missing: list[str] = []
+        for name in dataset_action_names:
+            if name not in observation:
+                missing.append(name)
+                continue
+            value = observation[name]
+            try:
+                if hasattr(value, "item"):
+                    value = value.item()
+            except (ValueError, TypeError):
+                pass
+            try:
+                extracted[name] = float(value)
+            except (TypeError, ValueError):
+                missing.append(name)
+
+        if missing:
+            logging.debug("Missing observation keys when extracting executed action: %s", missing)
+            return None
+        return extracted
+
+    # Prime the loop with the current observation so we can reuse the
+    # post-action observation from the previous iteration.
+    obs = robot.get_observation()
     timestamp = 0
     start_episode_t = time.perf_counter()
     while timestamp < control_time_s:
@@ -294,9 +331,6 @@ def record_loop(
         if events["exit_early"]:
             events["exit_early"] = False
             break
-
-        # Get robot observation
-        obs = robot.get_observation()
 
         # Applies a pipeline to the raw robot observation, default is IdentityProcessor
         obs_processed = robot_observation_processor(obs)
@@ -342,10 +376,10 @@ def record_loop(
 
         # Applies a pipeline to the action, default is IdentityProcessor
         if policy is not None and act_processed_policy is not None:
-            action_values = act_processed_policy
+            command_action_values = act_processed_policy
             robot_action_to_send = robot_action_processor((act_processed_policy, obs))
         else:
-            action_values = act_processed_teleop
+            command_action_values = act_processed_teleop
             robot_action_to_send = robot_action_processor((act_processed_teleop, obs))
 
         # Send action to robot
@@ -353,6 +387,17 @@ def record_loop(
         # so action actually sent is saved in the dataset. action = postprocessor.process(action)
         # TODO(steven, pepijn, adil): we should use a pipeline step to clip the action, so the sent action is the action that we input to the robot.
         _sent_action = robot.send_action(robot_action_to_send)
+
+        # Read the follower state after executing the command so we can store
+        # the actually executed joint positions and reuse the observation for
+        # the next control iteration.
+        next_obs = robot.get_observation()
+        executed_action_values = _extract_action_from_observation(next_obs)
+        if executed_action_values is None:
+            executed_action_values = _sent_action
+
+        obs = next_obs
+        action_values = executed_action_values if executed_action_values is not None else command_action_values
 
         # Write to dataset
         if dataset is not None:

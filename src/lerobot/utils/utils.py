@@ -225,6 +225,8 @@ def say(text: str, blocking: bool = False):
 
 def log_say(text: str, play_sounds: bool = True, blocking: bool = False):
     logging.info(text)
+    # Also print to stdout for headless environments where logging might be suppressed
+    print(f"[LeRobot] {text}", flush=True)
 
     if play_sounds:
         say(text, blocking)

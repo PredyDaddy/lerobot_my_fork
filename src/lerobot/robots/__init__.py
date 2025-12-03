@@ -17,3 +17,6 @@
 from .config import RobotConfig
 from .robot import Robot
 from .utils import make_robot_from_config
+
+# Import submodules to register their configs with draccus
+from . import agilex  # noqa: F401

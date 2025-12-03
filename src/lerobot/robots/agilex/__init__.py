@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# Copyright 2025 The HuggingFace Inc. team. All rights reserved.
+# Copyright 2024 The HuggingFace Inc. team. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,9 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .config import TeleoperatorConfig
-from .teleoperator import Teleoperator
-from .utils import TeleopEvents, make_teleoperator_from_config
+from .agilex import AgileXRobot
+from .agilex_ros_bridge import AgileXROSBridge, JointState, MockAgileXROSBridge, make_ros_bridge
+from .config_agilex import JOINT_NAMES, AgileXConfig
 
-# Import submodules to register their configs with draccus
-from . import agilex  # noqa: F401

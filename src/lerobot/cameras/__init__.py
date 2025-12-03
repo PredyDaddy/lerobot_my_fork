@@ -15,3 +15,7 @@
 from .camera import Camera
 from .configs import CameraConfig, ColorMode, Cv2Rotation
 from .utils import make_cameras_from_configs
+
+# Ensure all built-in camera types are registered with the ChoiceRegistry,
+# including our ROS camera adapter.
+from . import ros_camera  # noqa: F401
