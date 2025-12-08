@@ -181,3 +181,12 @@ outputs/
 
 # 忽略原版本agilex
 aiglex_origin_code
+
+# 忽略版本
+backup
+
+piper_sdk
+
+agilex_script
+
+demo_data_meta

@@ -14,7 +14,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .config import RobotConfig
-from .robot import Robot
-from .utils import make_robot_from_config
-from .agilex import AgilexBimanual, AgilexBimanualConfig
+from dataclasses import dataclass
+
+from lerobot.teleoperators.config import TeleoperatorConfig
+
+__all__ = ["AgilexBimanualLeaderConfig"]
+
+
+@TeleoperatorConfig.register_subclass("agilex_bimanual_leader")
+@dataclass(kw_only=True)
+class AgilexBimanualLeaderConfig(TeleoperatorConfig):
+    left_arm_port: str = "can_left"
+    right_arm_port: str = "can_right"
+    use_gripper: bool = True
+    num_joints_per_arm: int = 6

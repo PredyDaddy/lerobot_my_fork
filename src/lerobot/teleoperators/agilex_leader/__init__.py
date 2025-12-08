@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .config import RobotConfig
-from .robot import Robot
-from .utils import make_robot_from_config
-from .agilex import AgilexBimanual, AgilexBimanualConfig
+from .agilex_leader import AgilexBimanualLeader
+from .config_agilex_leader import AgilexBimanualLeaderConfig
+
+__all__ = ["AgilexBimanualLeader", "AgilexBimanualLeaderConfig"]
