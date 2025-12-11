@@ -82,7 +82,19 @@ class EpisodeSampler(torch.utils.data.Sampler):
     def __init__(self, dataset: LeRobotDataset, episode_index: int):
         from_idx = dataset.meta.episodes["dataset_from_index"][episode_index]
         to_idx = dataset.meta.episodes["dataset_to_index"][episode_index]
-        self.frame_ids = range(from_idx, to_idx)
+        # When a subset of episodes is loaded, hf_dataset indices are re-based, so map absolute
+        # frame indices from metadata to the relative indices present in the filtered dataset.
+        if dataset.episodes is not None:
+            if dataset._absolute_to_relative_idx is None:
+                raise ValueError("Expected absolute-to-relative index mapping when filtering episodes.")
+            try:
+                self.frame_ids = [dataset._absolute_to_relative_idx[i] for i in range(from_idx, to_idx)]
+            except KeyError as exc:
+                raise IndexError(
+                    f"Frame index {exc.args[0]} for episode {episode_index} is missing in the loaded dataset."
+                ) from exc
+        else:
+            self.frame_ids = range(from_idx, to_idx)
 
     def __iter__(self) -> Iterator:
         return iter(self.frame_ids)

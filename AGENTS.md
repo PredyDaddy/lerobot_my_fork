@@ -36,3 +36,5 @@
 ## 安全与配置提示
 - 不要提交令牌或机器人凭据；使用环境变量（如 `HUGGINGFACE_HUB_TOKEN`）或被 `.gitignore` 排除的本地配置。
 - 使用 `gitleaks`（随 pre-commit 提供）扫描密钥；硬件驱动差异时可借助 Dockerfile 获得可重复环境。
+
+跑测试使用(lerobot_v4)这个conda环境

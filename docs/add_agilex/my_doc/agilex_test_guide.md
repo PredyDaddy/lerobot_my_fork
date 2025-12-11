@@ -225,18 +225,22 @@ lerobot-record \
     --robot.type=agilex \
     --robot.mock=false \
     --robot.cameras='{
-      camera_left:  {"type": "ros_camera", "topic_name": "/camera_l/color/image_raw", "width": 640, "height": 480, "fps": 30},
-      camera_right: {"type": "ros_camera", "topic_name": "/camera_r/color/image_raw", "width": 640, "height": 480, "fps": 30}
+      camera_left:  {"type": "ros_camera", "topic_name": "/camera_l/color/image_raw",     "width": 640, "height":
+  480, "fps": 30},
+      camera_right: {"type": "ros_camera", "topic_name": "/camera_r/color/image_raw",     "width": 640, "height":
+  480, "fps": 30},
+      camera_front: {"type": "ros_camera", "topic_name": "/camera_f/color/image_raw", "width": 640, "height":
+  480, "fps": 30}
     }' \
     --teleop.type=agilex_teleop \
     --teleop.mock=false \
     --dataset.repo_id=your_username/agilex_dataset1 \
     --dataset.single_task="Your task description" \
-    --dataset.num_episodes=2 \
+    --dataset.num_episodes=5 \
     --dataset.fps=30 \
     --dataset.push_to_hub=false \
     --dataset.episode_time_s=15 \
-    --dataset.reset_time_s=10
+    --dataset.reset_time_s=15
 ```
 
 > **提示**：如果将来修好前视相机 `/camera_f/color/image_raw`，只需在 `--robot.cameras` 里多加一行：
@@ -258,7 +262,14 @@ export DISPLAY=:0
 lerobot-dataset-viz \
     --repo-id your_username/agilex_dataset1 \
     --episode-index 0
+
+# 可视化root路径数据
+lerobot-dataset-viz \
+    --repo-id so101_test_data2 \
+    --root /home/agilex/cqy/lerobot_dev/lerobot_4_2/lerobot_my_fork/so101_test_data2 \
+    --episode-index 0
 ```
+
 
 #### 远程/SSH 环境下可视化
 

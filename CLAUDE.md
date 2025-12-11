@@ -133,3 +133,5 @@ lerobot-dataset-viz --repo-id lerobot/pusht --episode-index 0
 3. 提交前运行测试: `pytest tests -xvs`
 4. 特定模块启用类型检查（configs、model、envs、cameras）
 5. 使用 ruff 进行代码格式化（行长度: 110 字符）
+
+跑测试使用(lerobot_v4)这个conda环境
