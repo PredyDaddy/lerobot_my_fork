@@ -98,6 +98,7 @@ class AgileXROSBridge:
         puppet_right_cmd_topic: str = "/puppet/joint_right/command",
         enable_flag_topic: str = "/enable_flag",
         subscribe_to_master: bool = True,
+        disable_on_disconnect: bool = True,
     ):
         """Initialize the ROS bridge.
 
@@ -123,6 +124,7 @@ class AgileXROSBridge:
         self._puppet_left_cmd_topic = puppet_left_cmd_topic
         self._puppet_right_cmd_topic = puppet_right_cmd_topic
         self._enable_flag_topic = enable_flag_topic
+        self._disable_on_disconnect = disable_on_disconnect
 
         # ROS objects (lazy initialization)
         self._ros_initialized = False
@@ -236,13 +238,15 @@ class AgileXROSBridge:
         from std_msgs.msg import Bool
 
         # Disable robot before disconnecting
-        if self._pub_enable is not None:
+        if self._disable_on_disconnect and self._pub_enable is not None:
             try:
                 self._pub_enable.publish(Bool(data=False))
                 rospy.sleep(0.1)
                 logger.info(f"[{self._node_name}] Robot disabled")
             except Exception:
                 pass
+        elif not self._disable_on_disconnect:
+            logger.info(f"[{self._node_name}] Skip disable_on_disconnect; leaving enable_flag as-is")
 
         if self._sub_puppet_left:
             self._sub_puppet_left.unregister()
@@ -454,6 +458,7 @@ def make_ros_bridge(config, subscribe_to_master: bool = False) -> AgileXROSBridg
     master_left_topic = getattr(config, "master_left_topic", "")
     master_right_topic = getattr(config, "master_right_topic", "")
     enable_flag_topic = getattr(config, "enable_flag_topic", "/enable_flag")
+    disable_on_disconnect = getattr(config, "disable_on_disconnect", True)
 
     return AgileXROSBridge(
         node_name=config.node_name,
@@ -465,5 +470,5 @@ def make_ros_bridge(config, subscribe_to_master: bool = False) -> AgileXROSBridg
         puppet_right_cmd_topic=puppet_right_cmd_topic,
         enable_flag_topic=enable_flag_topic,
         subscribe_to_master=subscribe_to_master,
+        disable_on_disconnect=disable_on_disconnect,
     )
-

@@ -513,7 +513,7 @@ def record(cfg: RecordConfig) -> LeRobotDataset:
 
             # Execute a few seconds without recording to give time to manually reset the environment
             # Skip reset for the last episode to be recorded
-            if not events["stop_recording"] and (
+            if cfg.dataset.reset_time_s > 0 and not events["stop_recording"] and (
                 (recorded_episodes < cfg.dataset.num_episodes - 1) or events["rerecord_episode"]
             ):
                 log_say("Reset the environment", cfg.play_sounds)

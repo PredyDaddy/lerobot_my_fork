@@ -1,13 +1,14 @@
 #!/usr/bin/env python
 
-"""Continuously send zero joint targets to both AgileX follower arms.
+"""Send a single zero joint target to both AgileX follower arms.
 
 This mirrors the `lerobot-replay` pipeline (robot connect -> get_observation ->
-process action -> send_action) and publishes several frames instead of a single
-one, making it more reliable when the Piper driver starts slightly later.
+process action -> send_action) to make sure the ROS bridge is fully initialized
+before sending the zero command.
 
-
-python agilex_scripts/send_zero_to_follower.py --duration_s=3 --fps=30
+  python agilex_scripts/send_zero_to_follower.py \
+    --wait_after_send_s=2.0 \
+    --robot.disable_on_disconnect=false
 """
 
 import logging
@@ -20,16 +21,20 @@ from lerobot.configs import parser
 from lerobot.processor import make_default_robot_action_processor
 from lerobot.robots import make_robot_from_config
 from lerobot.robots.agilex import AgileXConfig
-from lerobot.utils.robot_utils import precise_sleep
 
 
 @dataclass
 class SendZeroConfig:
     # Robot configuration; defaults to real hardware.
-    robot: AgileXConfig = field(default_factory=lambda: AgileXConfig(mock=False, max_relative_target=0.0))
-    # Publish rate and duration (seconds) for the zero command stream.
-    fps: int = 30
-    duration_s: float = 2.0
+    # disable_on_disconnect=False 确保断开连接后保持使能状态，防止机器人掉落
+    robot: AgileXConfig = field(default_factory=lambda: AgileXConfig(
+        mock=False,
+        max_relative_target=0.0,
+        disable_on_disconnect=False,  # 保持使能，不掉落
+    ))
+    # Seconds to keep the process alive after sending the zero command.
+    # This helps the follower controller receive/execute the target before we disconnect.
+    wait_after_send_s: float = 1.0
 
 
 @parser.wrap()
@@ -48,23 +53,15 @@ def main(cfg: SendZeroConfig) -> int:
 
     try:
         robot.connect(calibrate=False)
-        logging.info("Connected. Streaming zero commands at %s FPS for %ss.", cfg.fps, cfg.duration_s)
+        logging.info("Connected. Sending a single zero joint target.")
 
-        num_steps = int(cfg.duration_s * cfg.fps)
-        for step in range(num_steps):
-            start_t = time.perf_counter()
-
-            robot_obs = robot.get_observation()
-            processed_action = robot_action_processor((zero_action, robot_obs))
-            _ = robot.send_action(processed_action)
-
-            dt = time.perf_counter() - start_t
-            precise_sleep(max(0.0, 1 / cfg.fps - dt))
-
-            if step == 0:
-                logging.info("First zero frame sent.")
-
-        logging.info("Finished streaming zero commands (%s frames).", num_steps)
+        robot_obs = robot.get_observation()
+        processed_action = robot_action_processor((zero_action, robot_obs))
+        robot.send_action(processed_action)
+        logging.info("Zero joint target sent.")
+        if cfg.wait_after_send_s > 0:
+            logging.info("Waiting %.2fs before disconnect...", cfg.wait_after_send_s)
+            time.sleep(cfg.wait_after_send_s)
     finally:
         robot.disconnect()
     return 0

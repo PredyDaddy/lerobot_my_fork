@@ -63,6 +63,7 @@ class AgileXConfig(RobotConfig):
         max_relative_target: Maximum single-step joint change (radians) for safety.
         joint_limits: Joint position limits in radians.
         mock: If True, use mock mode without actual ROS connection.
+        disable_on_disconnect: If True, publish enable_flag=False when disconnecting.
     """
 
     # === ROS Configuration ===
@@ -105,3 +106,5 @@ class AgileXConfig(RobotConfig):
     # === Mock Mode (for testing) ===
     mock: bool = False
 
+    # === Shutdown Behavior ===
+    disable_on_disconnect: bool = True
