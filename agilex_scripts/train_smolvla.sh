@@ -40,14 +40,21 @@ fi
 # Adjust this mapping if your dataset uses different camera names.
 RENAME_MAP='{"observation.images.camera_front":"observation.images.camera1","observation.images.camera_left":"observation.images.camera2","observation.images.camera_right":"observation.images.camera3"}'
 
+# AgileX dual-arm: 14 DOF (7 per arm: 6 joints + 1 gripper)
+# Override the pretrained model's default 6-dim features to match actual robot dimensions.
+INPUT_FEATURES='{"observation.state":{"type":"STATE","shape":[14]},"observation.images.camera1":{"type":"VISUAL","shape":[3,256,256]},"observation.images.camera2":{"type":"VISUAL","shape":[3,256,256]},"observation.images.camera3":{"type":"VISUAL","shape":[3,256,256]}}'
+OUTPUT_FEATURES='{"action":{"type":"ACTION","shape":[14]}}'
+
 lerobot-train \
   --policy.path="${POLICY_PATH}" \
   --policy.vlm_model_name="${VLM_MODEL_PATH}" \
+  --policy.input_features="${INPUT_FEATURES}" \
+  --policy.output_features="${OUTPUT_FEATURES}" \
   --dataset.repo_id=agilex_dataset1 \
   --dataset.root="${ROOT_DIR}/agilex_dataset1" \
   --rename_map="${RENAME_MAP}" \
-  --output_dir="${ROOT_DIR}/outputs/train/smolvla_agilex_215" \
-  --job_name=smolvla_agilex_215 \
+  --output_dir="${ROOT_DIR}/outputs/train/smolvla_agilex_14dim" \
+  --job_name=smolvla_agilex_14dim \
   --policy.device=cuda \
   --policy.push_to_hub=false \
   --batch_size=32 \
