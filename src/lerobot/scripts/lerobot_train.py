@@ -228,6 +228,10 @@ def train(cfg: TrainPipelineConfig, accelerator: Accelerator | None = None):
         processor_kwargs["preprocessor_overrides"]["rename_observations_processor"] = {
             "rename_map": cfg.rename_map
         }
+        if getattr(cfg.policy, "vlm_model_name", None):
+            processor_kwargs["preprocessor_overrides"]["tokenizer_processor"] = {
+                "tokenizer_name": cfg.policy.vlm_model_name,
+            }
         postprocessor_kwargs["postprocessor_overrides"] = {
             "unnormalizer_processor": {
                 "stats": dataset.meta.stats,

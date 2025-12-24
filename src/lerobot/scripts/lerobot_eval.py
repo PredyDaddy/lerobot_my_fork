@@ -525,6 +525,10 @@ def eval_main(cfg: EvalPipelineConfig):
         "device_processor": {"device": str(policy.config.device)},
         "rename_observations_processor": {"rename_map": cfg.rename_map},
     }
+    if getattr(cfg.policy, "vlm_model_name", None):
+        preprocessor_overrides["tokenizer_processor"] = {
+            "tokenizer_name": cfg.policy.vlm_model_name,
+        }
 
     preprocessor, postprocessor = make_pre_post_processors(
         policy_cfg=cfg.policy,
