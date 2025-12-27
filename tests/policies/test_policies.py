@@ -46,6 +46,10 @@ from lerobot.utils.random_utils import seeded_context
 from tests.artifacts.policies.save_policy_to_safetensors import get_policy_stats
 from tests.utils import DEVICE, require_cpu, require_env, require_x86_64_kernel
 
+_POLICY_TEST_KWARGS = {
+    "act_dinov2": {"dinov2_model_name_or_path": "facebook/dinov2-base"},
+}
+
 
 @pytest.fixture
 def dummy_dataset_metadata(lerobot_dataset_metadata_factory, info_factory, tmp_path):
@@ -85,7 +89,7 @@ def dummy_dataset_metadata(lerobot_dataset_metadata_factory, info_factory, tmp_p
 def test_get_policy_and_config_classes(policy_name: str):
     """Check that the correct policy and config classes are returned."""
     policy_cls = get_policy_class(policy_name)
-    policy_cfg = make_policy_config(policy_name)
+    policy_cfg = make_policy_config(policy_name, **_POLICY_TEST_KWARGS.get(policy_name, {}))
     assert policy_cls.name == policy_name
     assert issubclass(
         policy_cfg.__class__, inspect.signature(policy_cls.__init__).parameters["config"].annotation
