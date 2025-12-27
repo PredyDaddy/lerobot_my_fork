@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run a SmolVLA policy on the AgileX robot using `lerobot-record`.
-# All paths below default to absolute paths; change them on the inference machine.
+# Defaults are derived from this repo; override via env vars on the inference machine.
 
 set -euo pipefail
 
@@ -20,11 +20,14 @@ export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 GPU_ID="${GPU_ID:-7}"
 export CUDA_VISIBLE_DEVICES="${GPU_ID}"
 
-# ===== Absolute paths (edit these on the inference machine) =====
-REPO_ROOT="${REPO_ROOT:-/mnt/data2/cqy/workspace/lerobot_my_fork}"
-VLM_MODEL_PATH="${VLM_MODEL_PATH:-/mnt/data2/cqy/workspace/lerobot_my_fork/SmolVLM2-500M-Video-Instruct}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT_DEFAULT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-TRAIN_OUTPUT_ROOT="${TRAIN_OUTPUT_ROOT:-/mnt/data2/cqy/workspace/lerobot_my_fork/outputs/train}"
+# ===== Paths (override these on the inference machine if needed) =====
+REPO_ROOT="${REPO_ROOT:-${REPO_ROOT_DEFAULT}}"
+VLM_MODEL_PATH="${VLM_MODEL_PATH:-${REPO_ROOT}/SmolVLM2-500M-Video-Instruct}"
+
+TRAIN_OUTPUT_ROOT="${TRAIN_OUTPUT_ROOT:-${REPO_ROOT}/outputs/train}"
 TRAIN_RUN="${TRAIN_RUN:-smolvla_agilex_14d}"
 CHECKPOINT_STEP="${CHECKPOINT_STEP:-last}" # "last" or an integer like 100000
 if [[ "${CHECKPOINT_STEP}" =~ ^[0-9]+$ ]]; then
@@ -34,8 +37,8 @@ fi
 # You can also directly set POLICY_DIR to a copied `pretrained_model` folder on another machine.
 POLICY_DIR="${POLICY_DIR:-${TRAIN_OUTPUT_ROOT}/${TRAIN_RUN}/checkpoints/${CHECKPOINT_STEP}/pretrained_model}"
 
-EVAL_OUTPUT_ROOT="${EVAL_OUTPUT_ROOT:-/mnt/data2/cqy/workspace/lerobot_my_fork/outputs/eval}"
-LOG_DIR="${LOG_DIR:-/mnt/data2/cqy/workspace/lerobot_my_fork/logs}"
+EVAL_OUTPUT_ROOT="${EVAL_OUTPUT_ROOT:-${REPO_ROOT}/outputs/eval}"
+LOG_DIR="${LOG_DIR:-${REPO_ROOT}/logs}"
 
 # Avoid permission issues by keeping HF caches in the repo (override if needed).
 export XDG_CACHE_HOME="${XDG_CACHE_HOME:-${REPO_ROOT}/.cache}"

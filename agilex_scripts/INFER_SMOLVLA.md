@@ -1,4 +1,4 @@
-# `infer_smolvla.sh` 修改指南（换机器推理）
+# `infer_smolvla.sh` 使用指南（换机器推理）
 
 `agilex_scripts/infer_smolvla.sh` 用于在 **AgileX 机器人** 上调用 `lerobot-record` 跑 SmolVLA policy（在线推理 + 录制 eval 数据）。
 
@@ -8,12 +8,14 @@
 
 ---
 
-## 1) 你需要改哪些地方（全部是绝对路径/配置）
+## 1) 你需要配置哪些地方（推荐用环境变量覆盖，不必改脚本）
 
-打开 `agilex_scripts/infer_smolvla.sh`，修改顶部 `# ===== Absolute paths ... =====` 那一段变量即可。
+`agilex_scripts/infer_smolvla.sh` 会默认把 `REPO_ROOT` 推导为脚本所在仓库根目录（`agilex_scripts/..`），并基于它拼出训练输出、eval 输出、日志与缓存路径。
+
+换机器时通常只需要用环境变量覆盖下面这些路径/配置即可（当然你也可以直接改脚本顶部 `# ===== Paths ... =====` 那一段变量）。
 
 ### A. 仓库与 VLM（必须）
-- `REPO_ROOT`：推理机上本仓库绝对路径。
+- `REPO_ROOT`：推理机上本仓库根目录（默认自动推导；仅当你不在仓库内运行脚本或想改缓存/输出位置时再设置）。
 - `VLM_MODEL_PATH`：SmolVLM2 模型目录绝对路径（需包含 `config.json`、tokenizer 文件、权重 `*.safetensors`/`*.bin`）。
 
 ### B. Policy checkpoint（必须）
@@ -26,8 +28,8 @@
 - `CHECKPOINT_STEP`：`last` 或数字（例如 `100000`）
 
 ### C. 输出与日志（建议改）
-- `EVAL_OUTPUT_ROOT`：eval 数据输出根目录绝对路径
-- `LOG_DIR`：日志目录绝对路径
+- `EVAL_OUTPUT_ROOT`：eval 数据输出根目录（默认 `${REPO_ROOT}/outputs/eval`）
+- `LOG_DIR`：日志目录（默认 `${REPO_ROOT}/logs`）
 
 ### D. GPU / 推理设备
 - `GPU_ID=7`：脚本会设置 `CUDA_VISIBLE_DEVICES=7`
@@ -106,6 +108,5 @@ conda run -n lerobot_v4 bash agilex_scripts/infer_smolvla.sh --smoke
 
 - **`vlm_model_name` 路径不对**：checkpoint 保存的是训练机路径，新机器必须用 `VLM_MODEL_PATH` 覆盖（脚本已做 `--policy.vlm_model_name=...`）。
 - **相机 key 不匹配**：policy 用 `camera1/2/3`，你写成 `camera_front/camera_left/right` 会直接 feature mismatch。
-- **policy 还是 6 维**：推理会裁剪到 6 维，机器人动作就是错的；必须用 14D checkpoint。
+- **policy 还是 6 维**：脚本会强校验 `action_dim/state_dim`，不匹配会直接报错；必须用 14D checkpoint。
 - **`PLAY_SOUNDS=true` 但没装 `spd-say`**：会报错；脚本默认 `PLAY_SOUNDS=false`。
-
