@@ -94,7 +94,8 @@ conda run -n lerobot_v4 bash agilex_scripts/infer_act_dinov2.sh
 
 说明：
 - 脚本会设置 `CUDA_VISIBLE_DEVICES=${GPU_ID}`，因此一般 `POLICY_DEVICE=cuda`（或 `cuda:0`）即可；不要写 `cuda:7`。
-- 脚本默认 `push_to_hub=false`，会把数据落在 `EVAL_OUTPUT_ROOT`。
+- 脚本默认 `push_to_hub=false`，数据会写到 `EVAL_OUTPUT_ROOT/act_dinov2_eval_${TRAIN_RUN}_${CHECKPOINT_STEP}/${timestamp}`。
+- 如需固定输出目录，设置 `EVAL_OUTPUT_DIR=/abs/path/to/outputs/eval/my_run`。
 
 ### B. 如果你按原目录结构放到了仓库里
 
@@ -129,4 +130,3 @@ GPU_ID=7 POLICY_DEVICE=cuda conda run -n lerobot_v4 bash agilex_scripts/infer_ac
 - 报错缺少 image keys：用 `cat ${POLICY_DIR}/config.json | python -m json.tool | rg \"observation.images\"` 看看 checkpoint 里到底用的相机 key 是什么，然后对齐脚本。
 - GPU 不可用：脚本会在 `POLICY_DEVICE=cuda*` 时检查 `torch.cuda.is_available()`；如果失败，先解决驱动/CUDA/`CUDA_VISIBLE_DEVICES`。
 - ROS topic 不对：用环境变量覆盖 `ROS_MASTER_URI` / `CAMERA_*_TOPIC` / 机械臂 topic。
-

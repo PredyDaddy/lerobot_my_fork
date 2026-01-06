@@ -15,15 +15,19 @@ export HF_DATASETS_OFFLINE="${HF_DATASETS_OFFLINE:-${HF_HUB_OFFLINE}}"
 export TRANSFORMERS_OFFLINE="${TRANSFORMERS_OFFLINE:-${HF_HUB_OFFLINE}}"
 export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 
-GPU_ID="${GPU_ID:-7}"
+GPU_ID="${GPU_ID:-0}"
 export CUDA_VISIBLE_DEVICES="${GPU_ID}"
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
-LOG_DIR="${ROOT_DIR}/logs"
+SCRIPT_DIR="$(dirname "${BASH_SOURCE[0]}")"
+REPO_ROOT_DEFAULT="${SCRIPT_DIR}/.."
+REPO_ROOT="${REPO_ROOT:-${REPO_ROOT_DEFAULT}}"
+cd "${REPO_ROOT}"
+
+LOG_DIR="${LOG_DIR:-logs}"
 mkdir -p "${LOG_DIR}"
 
-export XDG_CACHE_HOME="${XDG_CACHE_HOME:-${ROOT_DIR}/.cache}"
+# Keep caches under the repo by default (override if needed).
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-.cache}"
 export HF_HOME="${HF_HOME:-${XDG_CACHE_HOME}/huggingface}"
 export HF_HUB_CACHE="${HF_HUB_CACHE:-${HF_HOME}/hub}"
 export HF_DATASETS_CACHE="${HF_DATASETS_CACHE:-${HF_HOME}/datasets}"
@@ -37,9 +41,9 @@ if ! command -v lerobot-record >/dev/null 2>&1; then
   exit 127
 fi
 
-TRAIN_OUTPUT_ROOT="${TRAIN_OUTPUT_ROOT:-${ROOT_DIR}/outputs/train}"
+TRAIN_OUTPUT_ROOT="${TRAIN_OUTPUT_ROOT:-outputs/train}"
 TRAIN_RUN="${TRAIN_RUN:-act_dinov2_agilex}"
-CHECKPOINT_STEP="${CHECKPOINT_STEP:-last}"
+CHECKPOINT_STEP="${CHECKPOINT_STEP:-100000}"
 if [[ "${CHECKPOINT_STEP}" =~ ^[0-9]+$ ]]; then
   CHECKPOINT_STEP="$(printf "%06d" "$((10#${CHECKPOINT_STEP}))")"
 fi
@@ -108,7 +112,7 @@ ROBOT_MOCK_DEFAULT="false"
 CAMERA_MOCK_DEFAULT="false"
 DISPLAY_DATA_DEFAULT="false"
 PLAY_SOUNDS_DEFAULT="false"
-EPISODE_TIME_S_DEFAULT="15"
+EPISODE_TIME_S_DEFAULT="90"
 RESET_TIME_S_DEFAULT="15"
 NUM_EPISODES_DEFAULT="3"
 
@@ -157,16 +161,20 @@ NUM_EPISODES="${NUM_EPISODES:-${NUM_EPISODES_DEFAULT}}"
 DATASET_FPS="${DATASET_FPS:-30}"
 EPISODE_TIME_S="${EPISODE_TIME_S:-${EPISODE_TIME_S_DEFAULT}}"
 RESET_TIME_S="${RESET_TIME_S:-${RESET_TIME_S_DEFAULT}}"
-EVAL_OUTPUT_ROOT="${EVAL_OUTPUT_ROOT:-${ROOT_DIR}/outputs/eval}"
+EVAL_OUTPUT_ROOT="${EVAL_OUTPUT_ROOT:-outputs/eval}"
+EVAL_BASE_DIR="${EVAL_OUTPUT_ROOT}/act_dinov2_eval_${TRAIN_RUN}_${CHECKPOINT_STEP}"
+EVAL_OUTPUT_DIR="${EVAL_OUTPUT_DIR:-${EVAL_BASE_DIR}/${timestamp}}"
+mkdir -p "${EVAL_BASE_DIR}"
 
-ROBOT_ID="${ROBOT_ID:-agilex}"
-ROS_MASTER_URI="${ROS_MASTER_URI:-http://192.168.1.234:11311}"
-NODE_NAME="${NODE_NAME:-agilex_evaluation}"
-PUPPET_LEFT_TOPIC="${PUPPET_LEFT_TOPIC:-/follower/arm_states_left}"
-PUPPET_RIGHT_TOPIC="${PUPPET_RIGHT_TOPIC:-/follower/arm_states_right}"
-MASTER_LEFT_TOPIC="${MASTER_LEFT_TOPIC:-/follower/arm_cmds_left}"
-MASTER_RIGHT_TOPIC="${MASTER_RIGHT_TOPIC:-/follower/arm_cmds_right}"
-ENABLE_FLAG_TOPIC="${ENABLE_FLAG_TOPIC:-/follow}"
+# Robot topics (update if your ROS setup differs).
+ROS_MASTER_URI="${ROS_MASTER_URI:-http://localhost:11311}"
+NODE_NAME="${NODE_NAME:-lerobot_agilex}"
+PUPPET_LEFT_TOPIC="${PUPPET_LEFT_TOPIC:-/puppet/joint_left}"
+PUPPET_RIGHT_TOPIC="${PUPPET_RIGHT_TOPIC:-/puppet/joint_right}"
+MASTER_LEFT_TOPIC="${MASTER_LEFT_TOPIC:-/master/joint_left}"
+MASTER_RIGHT_TOPIC="${MASTER_RIGHT_TOPIC:-/master/joint_right}"
+ENABLE_FLAG_TOPIC="${ENABLE_FLAG_TOPIC:-/enable_flag}"
+ROBOT_ID="${ROBOT_ID:-agilex_eval}"
 
 CAMERA_WIDTH="${CAMERA_WIDTH:-640}"
 CAMERA_HEIGHT="${CAMERA_HEIGHT:-480}"
@@ -206,7 +214,7 @@ EOF
 )"
 
 echo "[infer_act_dinov2] policy_dir=${POLICY_DIR}" >&2
-echo "[infer_act_dinov2] output_root=${EVAL_OUTPUT_ROOT}" >&2
+echo "[infer_act_dinov2] output_dir=${EVAL_OUTPUT_DIR}" >&2
 echo "[infer_act_dinov2] CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES} policy_device=${POLICY_DEVICE}" >&2
 echo "[infer_act_dinov2] robot_mock=${ROBOT_MOCK} camera_mock=${CAMERA_MOCK} display_data=${DISPLAY_DATA}" >&2
 
@@ -225,7 +233,7 @@ lerobot-record \
   --policy.path="${POLICY_DIR}" \
   --policy.device="${POLICY_DEVICE}" \
   --dataset.repo_id="${DATASET_REPO_ID}" \
-  --dataset.root="${EVAL_OUTPUT_ROOT}" \
+  --dataset.root="${EVAL_OUTPUT_DIR}" \
   --dataset.single_task="${TASK}" \
   --dataset.num_episodes="${NUM_EPISODES}" \
   --dataset.fps="${DATASET_FPS}" \
