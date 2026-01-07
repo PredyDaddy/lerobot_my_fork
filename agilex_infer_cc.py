@@ -7,8 +7,8 @@ Agilex 双臂 ACT 策略推理脚本
 
 用法:
     python agilex_infer_cc.py \
-        --checkpoint /home/agilex/cqy/lerobot_dev/lerobot_4_2/lerobot_my_fork/outputs/act_agilex_both_side_yellow_bottle/checkpoints/last/pretrained_model \
-        --fps 30
+        --checkpoint /home/agilex/cqy/lerobot_dev/lerobot_4_2/lerobot_my_fork/outputs/act_agilex_dual_banana_final/checkpoints/last/pretrained_model \
+        --fps 30 --binary-gripper
 
     # Mock 模式测试
     python agilex_infer_cc.py --checkpoint <path> --mock --duration 5
@@ -89,6 +89,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", type=str, default="cuda", choices=["cuda", "cpu"], help="推理设备")
     parser.add_argument("--duration", type=float, default=None, help="推理持续时间(秒)，不指定则无限循环")
     parser.add_argument("--mock", action="store_true", help="使用 mock 模式（不连接真实硬件）")
+    parser.add_argument("--binary-gripper", action="store_true", help="启用夹爪二值化（增加抓取力度）")
+    parser.add_argument("--gripper-threshold", type=float, default=0.7,
+                        help="夹爪二值化阈值 (0-1)，低于此值设为0，高于设为最大值")
 
     args = parser.parse_args()
     if args.fps <= 0:
@@ -146,6 +149,28 @@ def format_observation(obs: dict[str, Any], config: dict[str, Any]) -> dict[str,
         count=len(config["state_keys"]),
     )
     return formatted
+
+
+def binarize_gripper(action: dict[str, Any], threshold: float) -> dict[str, Any]:
+    """对夹爪值进行二值化处理。
+
+    Args:
+        action: 动作字典
+        threshold: 阈值 (0-1)
+
+    Returns:
+        处理后的动作字典
+    """
+    GRIPPER_MAX = 0.085
+    threshold_value = GRIPPER_MAX * threshold
+
+    for key in ("left_gripper.pos", "right_gripper.pos"):
+        if key in action:
+            if action[key] < threshold_value:
+                action[key] = 0.0
+            else:
+                action[key] = GRIPPER_MAX
+    return action
 
 
 def resolve_device(device_str: str) -> tuple[str, torch.device]:
@@ -246,6 +271,8 @@ def run_inference_loop(
     stop: StopSignal,
     allow_blank_images: bool,
     config: dict[str, Any],
+    binary_gripper: bool,
+    gripper_threshold: float,
 ) -> tuple[int, float]:
     """运行推理循环。
 
@@ -299,6 +326,8 @@ def run_inference_loop(
             )
             # 转换为机器人动作格式并发送
             robot_action = make_robot_action(action, ds_features)
+            if binary_gripper:
+                robot_action = binarize_gripper(robot_action, gripper_threshold)
             robot.send_action(robot_action)
 
             step_count += 1
@@ -356,6 +385,8 @@ def main() -> int:
                 stop=stop,
                 allow_blank_images=args.mock,
                 config=config,
+                binary_gripper=args.binary_gripper,
+                gripper_threshold=args.gripper_threshold,
             )
     except Exception as e:
         logger.error(f"推理过程出错: {e}")
