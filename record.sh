@@ -13,9 +13,9 @@ lerobot-record \
     }' \
     --teleop.type=agilex_teleop \
     --teleop.mock=false \
-    --dataset.repo_id=cqy/agilex_both_side_black_cup \
-    --dataset.single_task="Put the both sides of the black cup into the orange box" \
-    --dataset.num_episodes=50 \
+    --dataset.repo_id=cqy/agilex_both_side_box \
+    --dataset.single_task="Put the both sides of the box into the orange box" \
+    --dataset.num_episodes=30 \
     --dataset.fps=30 \
     --dataset.push_to_hub=false \
     --dataset.episode_time_s=8 \
