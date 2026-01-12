@@ -13,11 +13,11 @@ lerobot-record \
     }' \
     --teleop.type=agilex_teleop \
     --teleop.mock=false \
-    --dataset.repo_id=cqy/agilex_both_side_box \
-    --dataset.single_task="Put the both sides of the box into the orange box" \
-    --dataset.num_episodes=30 \
+    --dataset.repo_id=cqy/agilex_vla_demo \
+    --dataset.single_task="Pick up the black cups and place them in the orange box." \
+    --dataset.num_episodes=5 \
     --dataset.fps=30 \
     --dataset.push_to_hub=false \
     --dataset.episode_time_s=8 \
     --dataset.reset_time_s=8 \
-    --resume=true
+    # --resume=true
